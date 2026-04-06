@@ -39,7 +39,7 @@ class PlanDetails:
         print("\nAvailable Subscription Plans")
         print("Plan No\tPlan Name\tPrice")
         for planNum, (planName, planPrice) in self.subscription_plans.items():
-            print(f"{planNum}\t\t{planName}\t\t{planPrice}")
+            print(f"{planNum}\t{planName}\t{planPrice}")
 
     def getPlanBySelection(self, planNum):
         return self.subscription_plans.get(planNum, None)
@@ -59,7 +59,7 @@ class SubscriptionDetails:
     def displaySubscriptionDetails(self):
         print("Subscription ID\tUser ID\tPlan\tAmount\tStart Date\tStatus")
         print(
-            f"{self.subscriptionID}\t\t{self.userID}\t{self.planName}\t{self.amount}\t{self.startDate}\t{self.status}"
+            f"{self.subscriptionID}\t{self.userID}\t{self.planName}\t{self.amount}\t{self.startDate}\t{self.status}"
         )
 
 
@@ -120,7 +120,7 @@ def selectPlan_generateInvoice(userId):
 
 
 while True:
-    print("\nSubscription Billing System")
+    print("\n\nSubscription Billing System")
     print("1. Enter User Details")
     print("2. Display User Details")
     print("3. View Subscription Plans and Prices")
