@@ -63,7 +63,6 @@ while True:
 
     finally:
         input("Press any key to continue...")
-        continue
 
 
 
