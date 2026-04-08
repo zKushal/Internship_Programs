@@ -7,6 +7,7 @@ class createAccount:
         self.global_address = address
         self.global_phoneNumber = phoneNumber
         self.global_citizenshipNumber = citizenshipNumber
+        createAccount.createAccountList.append(self)
 
     def displayAccountDetails(self):
         print(f"First Name: {self.global_first_name}")
@@ -71,8 +72,6 @@ while True:
     
          
                 account = createAccount(first_name, last_name, age, address, phoneNumber, citizenshipNumber)
-    
-                createAccount.createAccountList.append(account)
                 
             search_citizenship_number = int(input("Enter citizenship number to search: "))
             found_account = False
@@ -83,9 +82,9 @@ while True:
                     account.displayAccountDetails()
                     found_account = True
                     break
-                if not found_account:
-                    print("Account not found.")
-                    print("\n")
+            if not found_account:
+                print("Account not found.")
+                print("\n")
         case "2":
             print("\n")
             deposit_amount = float(input("Enter the amount to deposit: "))

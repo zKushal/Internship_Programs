@@ -22,7 +22,7 @@ class createAccount:
             
 n = int(input("Enter the number of accounts you want to create: "))
             
-for i in  (n):
+for i in range(n):
     print(f"Enter details for account {i+1}:")
     first_name = input("Enter first name: ")
     last_name = input("Enter last name: ")
@@ -37,17 +37,16 @@ for i in  (n):
          
     account = createAccount(first_name, last_name, age, address, phoneNumber, citizenshipNumber)
     
-    createAccount.createAccountList.append(account)
-    
 search_citizenship_number = int(input("Enter citizenship number to search: "))
 found_account = False
 
-if search_citizenship_number == account.global_citizenshipNumber:
-    print("Account found!!! Details are as follows: ")
-    account.displayAccountDetails()
-    found_account = True
-    
-else:
+for account in createAccount.createAccountList:
+    if search_citizenship_number == account.global_citizenshipNumber:
+        print("Account found!!! Details are as follows: ")
+        account.displayAccountDetails()
+        found_account = True
+        break
+
+if not found_account:
     print("Account not found.")
-    
-    
+        

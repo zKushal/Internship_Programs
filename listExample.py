@@ -1,8 +1,4 @@
 class Person:
-    global_first_name = ""
-    global_last_name = ""
-    global_age = 0
-    
     def __init__(self, first_name, last_name, age):
         self.first_name = first_name
         self.last_name = last_name
@@ -18,8 +14,8 @@ people = [person1, person2, person3, person4] # object of class Person is stored
 
 people_with_Alice = list(
     filter(
-        lambda person: person.global_first_name == "Alice", people
+        lambda person: person.first_name == "Alice", people
         ))
 
 for person in people_with_Alice:
-    print(f"First Name: {person.global_first_name}, {person.global_last_name}, Age: {person.global_age}")
+    print(f"First Name: {person.first_name}, Last Name: {person.last_name}, Age: {person.age}")
