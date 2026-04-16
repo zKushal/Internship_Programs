@@ -8,7 +8,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
-    fullname = Column(String(100), optional=True)
+    fullname = Column(String(100), nullable=True)
 
     
 
@@ -22,8 +22,8 @@ print("Tables created successfully.")
 
 
 with Session(engine) as session:
-    user1 = User(name="Alu Pidalu", fullname="")
-    user2 = User(name="Jane", fullname="")
+    user1 = User(name="Alu Pidalu", fullname=None)
+    user2 = User(name="Jane", fullname=None)
     session.add_all([user1, user2])
     session.commit()
 
@@ -50,7 +50,7 @@ with Session(engine) as session:
 
 
 
-        
+
 # ORM program to database interaction using SQLAlchemy. It defines a User model, creates a PostgreSQL database connection, and performs basic CRUD operations.
 # Pip means "Package Installer for Python". It is a tool used to install and manage software packages written in Python. It allows you to easily install, upgrade, and remove Python packages from the Python Package Index (PyPI) and other package repositories. You can use pip to install libraries and frameworks that are not included in the standard Python library, making it easier to develop and manage your Python projects.
 
