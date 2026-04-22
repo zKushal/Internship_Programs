@@ -155,6 +155,24 @@ def get_recent_messages(limit: int = 10) -> list[tuple[str, str, Any]]:
     return list(reversed(rows))
 
 
+def get_recent_user_prompts(limit: int = 5) -> list[str]:
+    with connect(get_database_url()) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT content
+                FROM chat_messages
+                WHERE role = 'user'
+                ORDER BY id DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            rows = cursor.fetchall()
+
+    return [row[0] for row in reversed(rows)]
+
+
 def create_todos(tasks: list[dict[str, str]]) -> list[dict[str, Any]]:
     if not tasks:
         return []
@@ -229,6 +247,47 @@ def list_todos(status: str = "all") -> list[dict[str, Any]]:
             rows = cursor.fetchall()
 
     return [_row_to_todo(row) for row in rows]
+
+
+def get_learning_memory() -> dict[str, list[dict[str, Any]]]:
+    with connect(get_database_url()) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"""
+                SELECT id, title, description, status, created_at, updated_at
+                FROM {TODO_TABLE}
+                WHERE status = 'completed'
+                ORDER BY updated_at DESC, id DESC
+                """
+            )
+            completed_rows = cursor.fetchall()
+
+            cursor.execute(
+                f"""
+                SELECT id, title, description, status, created_at, updated_at
+                FROM {TODO_TABLE}
+                WHERE status = 'learning'
+                ORDER BY updated_at DESC, id DESC
+                """
+            )
+            learning_rows = cursor.fetchall()
+
+            cursor.execute(
+                f"""
+                SELECT id, title, description, status, created_at, updated_at
+                FROM {TODO_TABLE}
+                WHERE status = 'pending'
+                ORDER BY id
+                LIMIT 5
+                """
+            )
+            pending_rows = cursor.fetchall()
+
+    return {
+        "completed": [_row_to_todo(row) for row in completed_rows],
+        "learning": [_row_to_todo(row) for row in learning_rows],
+        "pending": [_row_to_todo(row) for row in pending_rows],
+    }
 
 
 def search_todos(query: str) -> list[dict[str, Any]]:

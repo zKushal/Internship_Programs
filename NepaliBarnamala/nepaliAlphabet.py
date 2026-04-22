@@ -8,6 +8,7 @@ from groq import Groq
 from chat_db import (
     create_todos,
     delete_todo,
+    get_learning_memory,
     get_recent_messages,
     initialize_database,
     list_todos,
@@ -42,6 +43,7 @@ Supported intents:
 - "delete_todo": delete one todo when the user says it is unnecessary
 - "get_todo": search for a single todo by id, title, or keyword
 - "list_todos": list todos by status: all, learning, pending, completed
+- "recall_learning": answer from the database using the user's learning todos
 
 Rules:
 - If the user wants to learn something, do not create todos immediately.
@@ -56,6 +58,7 @@ Rules:
   - any deadline, preference, or constraint
 - If any key planning detail is missing, use "chat" and ask concise questions.
 - Only use "create_todos" after the user has clearly confirmed yes and enough details are available.
+- If the user asks for explanation, teaching, examples, or more detail about a topic, use "chat", not "create_todos".
 - For created todos, generate 3 to 7 practical learning tasks that match the user's timeframe and goal.
 - Use short titles and clear descriptions.
 - Default the first created todo to "learning" and the rest to "pending".
@@ -63,11 +66,12 @@ Rules:
 - For "delete_todo", include "todo_id".
 - For "get_todo", include "query".
 - For "list_todos", include "status_filter".
+- If the user asks what they learned previously, answer from learning records stored in the database, not from raw chat prompts.
 - For normal conversation, use "chat".
 
 Return this schema exactly:
 {
-  "intent": "chat | create_todos | update_status | delete_todo | get_todo | list_todos",
+  "intent": "chat | create_todos | update_status | delete_todo | get_todo | list_todos | recall_learning",
   "reply": "short helpful message for the user",
   "confirmed": false,
   "collecting_requirements": false,
@@ -222,6 +226,39 @@ def is_affirmative_request(text: str) -> bool:
     }
 
 
+def is_explicit_todo_request(text: str) -> bool:
+    normalized = text.strip().lower()
+    todo_phrases = (
+        "create todo",
+        "create todos",
+        "make todo",
+        "make todos",
+        "create a plan",
+        "make a plan",
+        "learning plan",
+        "study plan",
+        "roadmap",
+    )
+    return any(phrase in normalized for phrase in todo_phrases)
+
+
+def is_teaching_request(text: str) -> bool:
+    normalized = text.strip().lower()
+    teaching_phrases = (
+        "teach me",
+        "full detail",
+        "full details",
+        "with example",
+        "examples",
+        "real life",
+        "current scenarios",
+        "details on",
+        "more detail",
+        "explain",
+    )
+    return any(phrase in normalized for phrase in teaching_phrases)
+
+
 def format_todos(todos: list[dict]) -> str:
     if not todos:
         return "No todos found."
@@ -241,6 +278,44 @@ def format_result(reply: str, todos: list[dict] | None = None) -> str:
         sections.append(f"Todos:\n{format_todos(todos)}")
     return "\n\n".join(sections)
 
+
+def is_learning_recall_request(text: str) -> bool:
+    normalized = text.strip().lower()
+    recall_phrases = (
+        "what did i learn",
+        "what i learned",
+        "what have i learned",
+        "learned previously",
+        "learn previously",
+        "previous learning",
+        "completed topics",
+        "completed todo",
+        "what am i learning",
+        "current learning",
+        "show my progress",
+    )
+    return any(phrase in normalized for phrase in recall_phrases)
+
+
+def build_learning_memory_reply() -> str:
+    memory = get_learning_memory()
+    learned_items = memory["completed"]
+    current_items = memory["learning"]
+
+    if learned_items:
+        lines = ["Based on your learning records, you previously learned:"]
+        for index, item in enumerate(learned_items[:5], start=1):
+            lines.append(f"{index}. {item['title']} - {item['description']}")
+        return "\n".join(lines)
+
+    if current_items:
+        lines = ["You do not have completed items yet, but you are currently learning:"]
+        for index, item in enumerate(current_items[:5], start=1):
+            lines.append(f"{index}. {item['title']} - {item['description']}")
+        return "\n".join(lines)
+
+    return "I checked your database, but I could not find any learning records yet."
+
 planning_requirements: list[str] = []
 planning_session_active = False
 
@@ -254,6 +329,13 @@ while True:
         print("\nAssistant:\nReply:\nGoodbye.")
         break
 
+    if is_learning_recall_request(user_input):
+        assistant_output = format_result(build_learning_memory_reply())
+        print(f"\nAssistant:\n{assistant_output}")
+        save_message("user", user_input)
+        save_message("assistant", assistant_output)
+        continue
+
     agent_output = call_agent(user_input)
     intent = str(agent_output.get("intent", "chat")).strip().lower()
     reply = str(agent_output.get("reply", "")).strip()
@@ -261,9 +343,19 @@ while True:
     collecting_requirements = parse_bool_flag(
         agent_output.get("collecting_requirements", False)
     )
+    explicit_todo_request = is_explicit_todo_request(user_input)
+    teaching_request = is_teaching_request(user_input)
     confirmed = confirmed or (
         planning_session_active and is_affirmative_request(user_input)
     )
+
+    if teaching_request:
+        confirmed = False
+
+    if intent == "create_todos" and not (
+        explicit_todo_request or (planning_session_active and confirmed)
+    ):
+        intent = "chat"
 
     assistant_output = ""
 
@@ -364,6 +456,8 @@ while True:
             reply or f"Here are your {status_filter or 'all'} todos.",
             results,
         )
+    elif intent == "recall_learning":
+        assistant_output = format_result(reply or build_learning_memory_reply())
     else:
         assistant_output = format_result(reply or "How can I help you learn today?")
 
