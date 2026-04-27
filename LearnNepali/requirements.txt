@@ -1,0 +1,4 @@
+sqlalchemy
+python-dotenv
+pydantic_ai
+psycopg2-binary

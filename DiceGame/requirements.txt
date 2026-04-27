@@ -1,2 +1,0 @@
-pydantic-ai-slim[groq]
-python-dotenv
